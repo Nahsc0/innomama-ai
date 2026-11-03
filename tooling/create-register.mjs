@@ -1,0 +1,26 @@
+import fs from 'node:fs/promises';
+import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
+import {mothers,facilities} from '../data.js';
+const wb=Workbook.create();
+const now=new Date().toISOString();
+const maternalHeaders=['record_id','facility_id','observed_at','age_years','gestation_weeks','anc_contacts','sbp_mmhg','dbp_mmhg','pulse_bpm','resp_per_min','spo2_pct','temp_c','hb_gdl','bleeding','seizure','breathless','headache','prior_complication','parity','proteinuria','synthetic'];
+const maternalRows=mothers.map((p,i)=>[p.id,p.facility,now,p.age,p.weeks,p.anc,p.sbp,p.dbp,p.pulse,p.resp,p.spo2,p.temp,p.hb,p.bleeding,p.seizure,p.breathless,p.headache,p.prior,i%4,i===0?'2+':'Negative',true]);
+const stockKeys=['sba','bpKit','fetal','thermometer','partograph','urineKit','oxytocin','ergometrine','water','soap','gloves','disinfectant','cutter','tie','misoprostol','magnesium','antibiotics','transport','resuscitation'];
+const facilityHeaders=['facility_id','facility_name','area','deliveries_6_months','observed_at',...stockKeys,'synthetic'];
+const facilityRows=facilities.map(f=>[f.id,f.name,f.area,f.deliveries,now,...stockKeys.map(k=>f[k]),true]);
+const guide=[['Field / instruction','Definition / value'],['InnoMama AI','InnoHealth Technologies synthetic NHMIS-style feed. No real patient data.'],['Purpose','Editable source for a continuously refreshed demonstration, not an official NHMIS schema.'],['Edit a value','Change a measurement or stock cell, keeping the header names and IDs stable.'],['Add a row','Use a new IM- identifier, an existing facility ID, and synthetic TRUE.'],['Blank numeric cell','Unknown measurement; never interpreted as zero.'],['Boolean fields','TRUE or FALSE. Blank stock means unknown. Symptom flags must be TRUE or FALSE.'],['observed_at','ISO 8601 UTC timestamp for the observation, not an outcome or prediction time.'],['record_id','Unique synthetic pregnancy/assessment identifier, e.g. IM-001. One current assessment per ID.'],['facility_id','Stable join key shared by Maternal_register and Facilities.'],['age_years','Age in years; 12–55 supported by the demo.'],['gestation_weeks','Gestational age in weeks; 1–44.'],['anc_contacts','Count of antenatal care contacts; 0–30.'],['sbp_mmhg / dbp_mmhg','Systolic / diastolic blood pressure in mmHg.'],['pulse_bpm / resp_per_min','Pulse beats per minute / respiratory breaths per minute.'],['spo2_pct / temp_c / hb_gdl','Oxygen saturation percent / Celsius / haemoglobin g/dL.'],['bleeding / seizure / breathless / headache','Reported symptoms, TRUE or FALSE.'],['prior_complication / parity / proteinuria','Prior obstetric complication flag; number of prior births; dipstick result. Parity/proteinuria are collected for future research, not scored.'],['deliveries_6_months','Synthetic preceding six-month facility delivery count for readiness weighting.'],['Stock booleans','Available and functioning TRUE, unavailable FALSE, blank unknown. Readiness uses the historical four-function method.'],['synthetic','Must be TRUE on every source row. This is a provenance assertion, not a privacy detector.'],['Refresh','GitHub Actions checks approximately every five minutes; GitHub scheduling and deployment can be delayed.'],['Failure handling','Invalid data fail the whole sync. Last accepted snapshot remains visible with freshness status.'],['Editing authority','Google Sheet is source of truth. Local app edits are a separate sandbox.'],['Public demo','Source data and accepted snapshots are publicly readable. Never enter real clinical information.']];
+for(const [name,rows] of [['Maternal_register',[maternalHeaders,...maternalRows]],['Facilities',[facilityHeaders,...facilityRows]],['Guide',guide]]){
+const s=wb.worksheets.add(name),cols=rows[0].length;
+s.getRangeByIndexes(0,0,rows.length,cols).values=rows;
+const range=s.getRangeByIndexes(0,0,rows.length,cols);range.format.font={name:'Arial',size:10,color:'#10284C'};range.format.rowHeight=30;range.format.columnWidth=19;range.format.verticalAlignment='center';
+s.getRangeByIndexes(0,0,1,cols).format={fill:'#10458E',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:42,wrapText:true};
+s.freezePanes.freezeRows(1);s.freezePanes.freezeColumns(1);s.showGridLines=false;
+if(name==='Guide'){s.getRange('A1:A25').format.columnWidth=34;s.getRange('B1:B25').format.columnWidth=96;s.getRange('B1:B25').format.wrapText=true;s.getRange('A2:B25').format.rowHeight=45;}else{s.getRange('A1:B'+rows.length).format.columnWidth=23;s.getRange('C1:C'+rows.length).format.columnWidth=29;}
+}
+wb.recalculate();
+console.log((await wb.inspect({kind:'table',range:'Maternal_register!A1:H4',include:'values',tableMaxRows:4,tableMaxCols:8})).ndjson);
+await fs.mkdir('outputs/nhmis',{recursive:true});
+for(const name of ['Maternal_register','Facilities','Guide']){const preview=await wb.render({sheetName:name,range:name==='Guide'?'A1:B8':'A1:H7',scale:1.5,format:'png'});await fs.writeFile(`outputs/nhmis/${name}.png`,new Uint8Array(await preview.arrayBuffer()));}
+await (await SpreadsheetFile.exportXlsx(wb)).save('outputs/nhmis/innomama-nhmis-dummy-register.xlsx');
+await fs.writeFile('outputs/nhmis/source-rows.json',JSON.stringify({maternal:[maternalHeaders,...maternalRows],facilities:[facilityHeaders,...facilityRows]},null,2));
+console.log('Workbook created and rendered.');

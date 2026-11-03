@@ -43,7 +43,7 @@ The intended workflow makes a missing signal visible, supports clinical review a
 
 Demo triggers: systolic BP ≥160 or <90; diastolic BP ≥110; pulse >120 or <50; respiratory rate >30 or <10; oxygen saturation <95%; reported bleeding, seizure or breathlessness yield Urgent. Temperature ≥38 or <36, intermediate elevated BP, headache/visual disturbance, prior complications, haemoglobin <11, fewer than eight ANC contacts at ≥36 weeks, incomplete routine functions or unconfirmed transport yield Review unless superseded. Missing required observations produce Incomplete unless urgent signs are present. These thresholds and routing are not a complete clinical protocol; local specialist review is required.
 
-No clinical effectiveness results exist. Seven automated tests verify critical rule behavior; browser testing verifies the interface and workflows. This demonstrates a usable product concept, not evidence that the app prevents mortality.
+No clinical effectiveness results exist. Fifteen automated tests verify critical rule and pipeline behavior; browser testing verifies the interface and workflows. This demonstrates a usable product concept, not evidence that the app prevents mortality.
 
 ## Product features
 
@@ -67,9 +67,62 @@ npm run build
 
 `dist/` is the deployable static app. The GitHub Actions workflow tests, builds and deploys it to GitHub Pages. In repository Settings → Pages, choose GitHub Actions. All asset paths are relative, supporting project-site hosting.
 
+## Connected NHMIS-style data pipeline (v1.1, 3 November 2026)
+
+The app now opens in **Connected register** mode, backed by this editable [synthetic Google Sheet](https://docs.google.com/spreadsheets/d/1yP0NPr-m1DgfDP3Fp_ceb1kn2oMaD0suEIfqB2_4fT8/edit). The Sheet is in the `ChatGPT` folder in My Drive and contains `Maternal_register`, `Facilities` and `Guide`. It simulates a digitized register; it is not an official NHMIS form or national NHMIS integration. All rows are invented.
+
+```mermaid
+flowchart LR
+  A[Digitized register simulation: Google Sheet] --> B[Scheduled GitHub Actions ingestion]
+  B --> C[Parse, validate and link facility IDs]
+  C --> D[Accepted timestamped JSON snapshot]
+  D --> E[Static build and GitHub Pages deployment]
+  E --> F[App polls snapshot every 60 seconds]
+  F --> G[Recalculate readiness and explainable alerts]
+  C -->|Invalid batch| H[Fail run; keep previous deployment]
+```
+
+### Refresh and ownership
+
+- The server-side workflow runs on pushes, manual dispatch and a five-minute cron schedule (`2-57/5 * * * *`, UTC). It continues while no browser is open. GitHub may delay or skip scheduled runs; this is near-real-time polling, not a guaranteed five-minute service. See [GitHub schedule documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onschedule).
+- Each successful ingestion reads the two source tabs through Google's unauthenticated CSV query endpoint. The **synthetic-only workbook has anyone-with-the-link Viewer access** so the public demo needs no key or embedded credential. See [Google's spreadsheet data-source access guidance](https://developers.google.com/chart/interactive/docs/spreadsheets).
+- Every accepted batch records ingestion time, source URL, schema version and a SHA-256 source-content hash. Workflow runs and their deployment artifacts provide the run history. The initial snapshot is versioned in Git; recurring data updates are deployed artifacts, not an endless sequence of source commits. Google Drive maintains Sheet edit history.
+- The app checks the same-origin deployed snapshot every 60 seconds, and **Check feed** checks immediately. It cannot force GitHub ingestion; use Actions → workflow → Run workflow for an immediate source check. GitHub queue, Google caching and Pages deployment add latency.
+- **Connected register** is read-only in the app; change source data in Google Sheets. **Local sandbox** preserves the earlier editable demo, assessments and review tracking without writing back to Google or mixing local edits into the feed. Export reflects the selected view.
+
+### Schema and quality controls
+
+One source row is the current assessment for a unique synthetic `record_id` such as `IM-001`, joined through `facility_id`. Editing that row updates it on the next successful ingestion. Duplicate IDs are rejected; longitudinal encounter history is outside this demo's current schema. Field names and measurement units are listed in [pipeline schema](pipeline/schema.js) and the Sheet's `Guide` tab. Maternal rows collect age, gestation, ANC contacts, blood pressure, pulse, respiration, oxygen saturation, temperature, haemoglobin, symptoms, prior complications, parity and dipstick proteinuria. Parity and proteinuria are retained for research and are not scored by the demo engine.
+
+Facility rows include the original four-function components plus misoprostol, magnesium sulphate, antibiotics, transport and resuscitation equipment. `observed_at` is the source observation time in UTC; `generatedAt` is ingestion time. The app displays ingestion freshness, which does not establish that an old clinical observation is current. Refresh source timestamps when collecting new observations.
+
+Validation enforces exact headers, required stable IDs, unique records, facility joins, a synthetic marker, UTC timestamps, explicit symptom booleans, numeric ranges and plausible systolic/diastolic ordering. Blank numeric values and blank stock values remain unknown. Any invalid source row rejects the batch, and deployment stops. The parser caps input size and row count (up to 1,000 source rows per tab). It does not infer missing values or silently discard invalid records. The synthetic marker is an assertion, not a detector of private information.
+
+If ingestion fails, the previous deployment remains available. If the browser fetch fails or receives an invalid snapshot, it retains its last accepted snapshot and displays a connection warning. A snapshot older than 15 minutes is labelled **Delayed feed**. Before any successful sync, bundled records are labelled an offline sample. Cached snapshots retain their original ingestion timestamps. No stale snapshot is relabelled as newly ingested.
+
+### Try the pipeline
+
+1. Open the source Sheet as its owner. In `Maternal_register`, change an invented observation, or in `Facilities`, change a stock boolean. Keep headers, identifiers and `synthetic=TRUE` intact.
+2. Wait for a scheduled run, or manually dispatch the workflow in [GitHub Actions](https://github.com/Nahsc0/innomama-ai/actions). A successful run ingests, validates, tests, builds and deploys the new snapshot.
+3. Open the app in Connected register mode. Use Check feed after deployment, or allow its next one-minute poll. The ingestion timestamp, relevant observations, readiness and alerts update together.
+4. For an invalid-data demonstration, use an out-of-range invented value and run ingestion. Confirm validation fails and the published app keeps its previous snapshot. Correct the Sheet before the next run.
+
+Local commands: `node pipeline/sync.mjs`, `npm test`, `npm run build`. The committed `pipeline/config.json` contains only public source identifiers, never credentials. Never place real clinical records in this public Sheet, repository or deployment. A real NHMIS integration requires an authorised authenticated server-side connector, approved schema mapping, patient privacy controls, provenance, encounter history and clinical validation.
+
+### Branding change
+
+The supplied InnoHealth reference informed the cobalt / midnight-blue / white palette and bright-green connection accent. The application now carries an SVG adaptation of the InnoHealth wordmark alongside InnoMama AI. The reference flyer itself, portraits, QR code and event details are not shipped. This is a reference-derived wordmark treatment, not a new trademark clearance.
+
+### Change tracking
+
+| Version | Change | Verification |
+| --- | --- | --- |
+| 1.0 | Original synthetic maternal surveillance demo | Core readiness and priority-rule tests; browser workflows |
+| 1.1 | InnoHealth branding, native Google Sheet, scheduled ingestion, schema validation, timestamp/hash provenance, automatic app refresh, explicit connected/sandbox modes | Pipeline parser/validation tests, source readback, live integration and browser checks |
+
 ## Architecture and data
 
-Buildless HTML, CSS and JavaScript modules; pure assessment logic in `engine.js`, synthetic fixtures in `data.js`, interface and browser storage in `app.js`. Local storage retains the demo on the same browser. No authentication, backend, remote database, real-time integration or notification service exists. Fonts may load from Google Fonts, with system fallbacks. The local server is for development only.
+Buildless HTML, CSS and JavaScript modules; pure assessment logic in `engine.js`, synthetic fixtures in `data.js`, interface in `app.js`, polling/cache in `feed.js`, and ingestion/validation in `pipeline/`. GitHub Actions provides scheduled server-side ingestion and deployment. Local storage retains sandbox changes and the last accepted feed cache on the same browser. No clinical backend, patient authentication or notification service exists. Fonts may load from Google Fonts, with system fallbacks. The local server is for development only.
 
 Public GitHub Pages hosting is appropriate for this synthetic demonstration. It is not a production clinical data platform. A future deployment needs secure identity and role permissions, encrypted clinical storage, monitored services, provenance, consent/governance, regulatory review and a clinician-owned escalation protocol. The local activity log is editable browser data, not a tamper-evident clinical audit trail.
 

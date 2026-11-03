@@ -1,15 +1,17 @@
-name: Test and deploy GitHub Pages
+name: Sync NHMIS demo and deploy GitHub Pages
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '2-57/5 * * * *'
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   deploy:
     environment:
@@ -22,6 +24,8 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+      - name: Fetch and validate synthetic Google Sheet
+        run: node pipeline/sync.mjs
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
