@@ -1,4 +1,4 @@
-import {mkdir,copyFile,cp} from 'node:fs/promises';
+import {mkdir,copyFile} from 'node:fs/promises';
 await mkdir('dist',{recursive:true});
 for(const f of ['index.html','styles.css','app.js','engine.js','data.js'])await copyFile(f,'dist/'+f);
 await mkdir('dist/research',{recursive:true});

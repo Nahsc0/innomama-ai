@@ -2,6 +2,8 @@
 
 **A clearer signal. A safer beginning.** An InnoHealth Technologies maternal-health research prototype for Northern Nigeria.
 
+**[Open the synthetic-data web demo](https://nahsc0.github.io/innomama-ai/)** · [Source repository](https://github.com/Nahsc0/innomama-ai)
+
 ## Problem statement and motivation
 
 Maternal care depends on both a woman's condition and the facility's ability to respond. Routine records and inventories often sit apart, obscuring missing observations, supplies or referral resources. InnoMama explores a connected early-warning workspace for primary healthcare teams. The motivating question is whether time-linked signal-function indicators add useful information to maternal observations when identifying elevated risk of defined complications.
