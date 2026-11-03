@@ -43,7 +43,7 @@ The intended workflow makes a missing signal visible, supports clinical review a
 
 Demo triggers: systolic BP ≥160 or <90; diastolic BP ≥110; pulse >120 or <50; respiratory rate >30 or <10; oxygen saturation <95%; reported bleeding, seizure or breathlessness yield Urgent. Temperature ≥38 or <36, intermediate elevated BP, headache/visual disturbance, prior complications, haemoglobin <11, fewer than eight ANC contacts at ≥36 weeks, incomplete routine functions or unconfirmed transport yield Review unless superseded. Missing required observations produce Incomplete unless urgent signs are present. These thresholds and routing are not a complete clinical protocol; local specialist review is required.
 
-No clinical effectiveness results exist. Fifteen automated tests verify critical rule and pipeline behavior; browser testing verifies the interface and workflows. This demonstrates a usable product concept, not evidence that the app prevents mortality.
+No clinical effectiveness results exist. Twenty-five automated tests verify critical rule, pipeline, analytics and escalation behavior; browser testing verifies the interface and workflows. This demonstrates a usable product concept, not evidence that the app prevents mortality.
 
 ## Product features
 
@@ -120,7 +120,58 @@ The supplied InnoHealth reference informed the cobalt / midnight-blue / white pa
 | 1.0 | Original synthetic maternal surveillance demo | Core readiness and priority-rule tests; browser workflows |
 | 1.1 | InnoHealth branding, native Google Sheet, scheduled ingestion, schema validation, timestamp/hash provenance, automatic app refresh, explicit connected/sandbox modes | Pipeline parser/validation tests, source readback, live integration and browser checks |
 
-## Architecture and data
+## Regional analytics and response centre (v1.2, 3 November 2026)
+
+Open **Analytics** from the navigation, or use the [direct dashboard link](https://nahsc0.github.io/innomama-ai/#analytics). The same Google Sheet now contains **160 synthetic current assessments linked to 41 invented facilities across all 19 northern states and the FCT**. Existing Gombe records were preserved; additional scenarios were appended. FCT is displayed separately as a territory, not counted as a twentieth state. This is a simulated deployment, not a claim of operational coverage.
+
+The `Facilities` source schema adds `state`, `latitude` and `longitude` after `synthetic`. New geographic rows require a recognised northern state/FCT and numeric coordinates within the supported Nigeria range. Locations are illustrative reference points, not actual facility addresses or navigation directions. The ingestion query now reads through column `AB`. Old 25-column snapshots remain readable for backward compatibility and are mapped to the original Gombe demonstration; the current source uses the expanded 28-column schema.
+
+### Dashboard and denominators
+
+State/territory, facility, urgency and indicator filters apply together. The facility list narrows when a state is chosen. State and facility-dot map clicks, priority legend clicks and gap-bar clicks also set those filters. Reset restores all records. An empty intersection displays zero counts and an empty state, without changing the denominator to another cohort. The filtered export includes every matching assessment, its facility, rule reasons and gaps; the on-screen detail table shows the first 80, with an explicit count and advice to narrow filters.
+
+| View | Definition |
+| --- | --- |
+| State choropleth | Filtered urgent assessment counts; darker red means a larger count. No matching data, no urgent triggers and states outside the simulated deployment have distinct legend meanings. This is not a mortality rate or population comparison. |
+| Priority donut | Counts of matching assessments in Urgent, Incomplete, Review and No triggers. Categories sum to the filtered cohort. |
+| Missing signals / care gaps | Number of matching mothers linked to an unavailable or unknown item, a missing observation or the specified maternal/context trigger. Multiple gaps per mother are possible. Medicine availability does not imply clinical indication, administration or causation. |
+| Routine-care readiness | Distinct linked facilities satisfying each original all-components-required function, divided by distinct facilities linked to matching mothers. |
+| ANC and gestational-age charts | Current recorded contact-count and gestation categories for matching mothers. ANC counts are contextual and do not apply an eight-contact target to every gestational age. |
+
+Boundaries come from [geoBoundaries gbOpen / GRID3](https://www.geoboundaries.org/api/current/gbOpen/NGA/ADM1/), Nigeria ADM1 (represented year 2022), under CC BY 4.0. Geometry is rounded and projected to SVG for local, key-free map rendering. Attribution and the pinned source URL are in [MAP-LICENSE](assets/MAP-LICENSE.md). Northern zone grouping follows the [National Bureau of Statistics regional classification](https://www.nigerianstat.gov.ng/pdfuploads/IGR_FULL_REPORT.pdf). The map is for exploration, not a legal boundary reference.
+
+### Named algorithm for action
+
+**Signal Priority Rules v1.2.0** is a deterministic rule engine, combined with conjunctive (all-components-required) routine-care readiness. It is not a trained ML classifier and does not implement miniPIERS/fullPIERS or estimate an outcome probability. The exact current thresholds appear in the app's **Evidence & AI** view and in the trigger description above.
+
+Order of precedence: (1) observed urgent physiological/symptom triggers → **Urgent**; (2) missing required observations → **Incomplete**; (3) maternal/context or readiness flags → **Review**; otherwise → **No triggers**. Urgent signs always override missingness. Missing medicine or staffing alone does not become a clinical emergency. The app preserves and displays the reasons for each priority. The newly added geographic fields, parity and proteinuria do not acquire invented predictive coefficients.
+
+### Automatic escalation and officer contacts
+
+The **[Escalations](https://nahsc0.github.io/innomama-ai/#escalations)** response centre creates an outbox record automatically for each urgent observation while this browser is running and has an accepted snapshot. Every record includes the pseudonymous case ID, facility, rule version, trigger reasons, message preview, timestamp and recommended response workflow. Repeated polls do not duplicate the same observation and trigger set. A new observation timestamp or a changed trigger set can create a new alert. Local sandbox and connected-view alert histories are separate.
+
+Each facility has a browser-local officer form for a dummy name, internationally formatted mobile number and synthetic-data confirmation. Contacts can also be uploaded as CSV, with exact headers:
+
+```csv
+facility_id,officer_name,phone,synthetic
+f1,Demo officer,+2340000000000,TRUE
+```
+
+The app provides a CSV template and a **Load dummy contacts for all facilities** button. Import rejects unknown facility IDs, duplicate rows, invalid phone formats and non-synthetic markers before applying any row. Missing contacts block the item. Saving a valid dummy contact prepares that same blocked item; acknowledgement survives refreshes. Contacts and response logs stay in this browser and are not uploaded to the public Sheet, repository or snapshot. Exporting the response log includes the dummy contacts. No real contact details should be used in this public prototype.
+
+**SMS is a simulation, not a live delivery integration.** The product owner chose to select an SMS provider later; this release intentionally delivers the testable simulation. `Simulated queued` means a message was prepared locally, not sent or delivered. `Acknowledged (simulation)` records a tester's action, not completed care. No provider account, sender number, paid service, server API, delivery receipt or background clinical dispatch is configured. Closing all app tabs stops this local simulation; the scheduled Sheet ingestion continues independently. Simulated alerts are reconstructed from the current accepted snapshot when the app reopens, not from a complete event history.
+
+For an actual SMS service, implement an authenticated server-side dispatcher alongside ingestion, a governed contact registry, verified recipients and an approved sender/provider. Keep credentials off GitHub Pages. Use server-side idempotency keys, delivery webhooks with signature verification, retry limits, delivery failure monitoring and an alternative contact route. Clinical teams must approve escalation priorities, consent and data minimisation. This requires a separate production service and provider configuration; it cannot be supplied by GitHub Pages alone.
+
+### Recommended immediate action workflow
+
+The app recommends contacting the facility officer/care team promptly, reaching the mother or carer through that team to establish current location and condition, arranging qualified maternity assessment, and coordinating urgent referral/transport under the local protocol if necessary. It prompts recording contact attempts, handover and acknowledgement. Do not wait for an SMS to act. These are workflow prompts for a clinician-owned protocol, not autonomous diagnosis, medication instructions or a guarantee of a successful delivery.
+
+### Verification and change tracking
+
+Core tests now cover the rule engine, pipeline, combined analytics filters, distinct-facility denominators, empty selections, missing data, urgency-only escalation, deduplication, new-observation re-alerting, blocked-contact recovery, acknowledgement preservation and CSV validation. Browser checks cover map selection, intersected filters, charts, contact registration/upload, response tracking, export and responsive layouts. Changes are versioned in Git and summarised in [CHANGELOG](CHANGELOG.md).
+
+## Architecture details
 
 Buildless HTML, CSS and JavaScript modules; pure assessment logic in `engine.js`, synthetic fixtures in `data.js`, interface in `app.js`, polling/cache in `feed.js`, and ingestion/validation in `pipeline/`. GitHub Actions provides scheduled server-side ingestion and deployment. Local storage retains sandbox changes and the last accepted feed cache on the same browser. No clinical backend, patient authentication or notification service exists. Fonts may load from Google Fonts, with system fallbacks. The local server is for development only.
 

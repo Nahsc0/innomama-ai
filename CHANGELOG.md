@@ -1,5 +1,14 @@
 # Change log
 
+## 1.2.0 — 3 November 2026
+
+- Added regional analytics: interactive Nigeria state map, urgency donut, care-gap, routine-readiness, ANC and gestation charts, intersected state/facility/urgency/indicator filters and filtered JSON export.
+- Expanded the same synthetic Google register to 160 assessments and 41 facilities across 19 northern states plus FCT; retained original Gombe rows. Added state and illustrative coordinates with schema validation and backward compatibility.
+- Added the named Signal Priority Rules v1.2.0 explanation and thresholds in the app. No trained-model or outcome-probability claim was introduced.
+- Added automatic browser-local urgent escalation simulation, per-facility officer forms, validated dummy-contact CSV import/template, message previews, recommended response workflow, deduplication and acknowledgement tracking. No actual SMS delivery service is connected.
+- Preserved separate connected/sandbox alert histories; kept contact details out of public source data.
+- Added focused analytics/escalation tests and documented geography licensing, chart denominators, source migration, SMS limitations and production prerequisites.
+
 ## 1.1.0 — 3 November 2026
 
 - Applied InnoHealth reference colours (cobalt, midnight blue, white and a green connection accent), an adapted wordmark and the maternal-health theme.
