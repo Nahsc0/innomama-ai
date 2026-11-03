@@ -189,3 +189,12 @@ Compare a pre-specified clinical baseline, regularised regression and suitable m
 
 Product concept: **InnoMama AI by InnoHealth Technologies**. Branding is provisional and has not undergone a trademark clearance. Third-party papers retain their own licenses; app source and downloaded publications are distinct works.
 
+
+
+## Readability and interaction update — UI v1.3.0
+
+The interface now uses a 16px base size, at least 14px for secondary HTML text, larger headings and 44px minimum primary control targets. The header's **Text size** selector offers Standard (16px), Larger (18px) and Largest (20px); the preference is saved on this browser and scales rem-based interface text across pages. SVG labels use chart coordinate units, with full state details available through focus/hover and the accessible state-count table.
+
+Analytics supports removable filter chips, full-row clickable care-gap bars (also Enter/Space), selected priority-legend feedback, and a readable map detail panel on hover or keyboard focus. State, facility, priority and indicator filters continue to intersect; clearing the state also clears its dependent facility. Matching counts are announced as a status update. Larger form controls, visible keyboard focus and responsive layouts improve touch and keyboard use. Tables scroll within their cards on narrow screens.
+
+Validation: all 25 existing tests passed, build succeeded, and browser checks covered state selection, chip removal, keyboard care-gap/map selection, persistent largest text setting after reload, and mobile layout at 390px plus desktop at 1440px. This UI update preserves Signal Priority Rules v1.2.0, the Google Sheet pipeline and simulated SMS behaviour.

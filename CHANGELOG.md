@@ -1,5 +1,12 @@
 # Change log
 
+## 1.3.0 — 3 November 2026
+
+- Enlarged typography throughout and added a persistent Standard / Larger / Largest text-size selector.
+- Added removable analytics filter chips, full-row keyboard-accessible gap bars, selected legend feedback and focus/hover map details.
+- Enlarged touch targets, strengthened secondary-text contrast and focus outlines, and adjusted responsive layouts.
+- Verified desktop/mobile interaction and retained all 25 passing tests; clinical rules, source pipeline and SMS simulation remain unchanged.
+
 ## 1.2.0 — 3 November 2026
 
 - Added regional analytics: interactive Nigeria state map, urgency donut, care-gap, routine-readiness, ANC and gestation charts, intersected state/facility/urgency/indicator filters and filtered JSON export.
