@@ -1,6 +1,6 @@
 import {assess,components,readiness} from './engine.js';
 import {regionFor} from './regions.js';
-export const algorithm={name:'Signal Priority Rules',version:'1.2.0',type:'Deterministic rules + conjunctive facility readiness',description:'Urgent physiological or symptom triggers take precedence, then incomplete observations, then care-context review flags. No mortality probability or trained ML model.'};
+export const algorithm={name:'Signal Priority Rules',version:'1.2.0',type:'Deterministic rules + conjunctive facility readiness',description:'Urgent physiological or symptom triggers take precedence, then incomplete observations, then care-context review flags. This is the rule layer; trained synthetic ML estimates appear separately in ML predictions.'};
 export function gapsFor(p,f){const result=assess(p,f),gaps=[];
 for(const [key,label]of Object.entries(components)){if(f[key]!==true)gaps.push({key:'stock:'+key,label,type:'Facility resource',status:f[key]===false?'Unavailable':'Unknown'});}
 if(p.weeks>=36&&p.anc!==null&&p.anc!==undefined&&p.anc<8)gaps.push({key:'anc',label:'ANC follow-up near term',type:'Care context',status:'Below demo contact target'});

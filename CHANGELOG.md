@@ -1,5 +1,13 @@
 # Change log
 
+## 1.4.0 — 3 November 2026
+
+- Added a reproducible supervised ML experiment on 6,000 separately generated synthetic labelled assessments. Compared L2 logistic regression and depth-2 gradient boosting with facility-disjoint training/validation/test sets; selected logistic regression by validation Brier score. Published weights, preprocessing, model/data hashes, calibration and held-out metrics.
+- Added ML predictions, individual-record estimates, learned contributions, scenario exploration, filtered exports, input range/missingness guards and frozen-model inference on feed updates. Urgent safety-rule alerts remain independent.
+- Added a local AI data assistant using a trained eight-intent naive Bayes classifier and exact grounded queries, with source/scope provenance, follow-ups, explicit capability limits and no external AI API.
+- Added offline labelled synthetic-cohort retraining contract, documented the full learning/promotion pipeline and expanded automated coverage from 25 to 42 tests. Clinical validation, mortality prediction, real outcomes and live SMS remain outside this demonstration.
+
+
 ## 1.3.0 — 3 November 2026
 
 - Enlarged typography throughout and added a persistent Standard / Larger / Largest text-size selector.

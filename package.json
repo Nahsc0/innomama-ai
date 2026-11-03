@@ -1,1 +1,13 @@
-{"name":"innomama-ai","version":"1.3.0","private":true,"type":"module","scripts":{"test":"node --test tests/engine.test.js tests/pipeline.test.js tests/analytics.test.js","start":"node server.js","build":"node build.js","sync":"node pipeline/sync.mjs"}}
+{
+  "name": "innomama-ai",
+  "version": "1.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/engine.test.js tests/pipeline.test.js tests/analytics.test.js tests/ml.test.js tests/assistant.test.js",
+    "start": "node server.js",
+    "build": "node build.js",
+    "sync": "node pipeline/sync.mjs",
+    "train:ml": "node ml/train.mjs && node ml/train-intent.mjs"
+  }
+}

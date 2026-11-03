@@ -8,7 +8,9 @@
 
 Maternal care depends on both a woman's condition and the facility's ability to respond. Routine records and inventories often sit apart, obscuring missing observations, supplies or referral resources. InnoMama explores a connected early-warning workspace for primary healthcare teams. The motivating question is whether time-linked signal-function indicators add useful information to maternal observations when identifying elevated risk of defined complications.
 
-This demo does **not** predict survival, maternal death, or a successful delivery. It uses transparent illustrative rules on synthetic data. No model has been trained or clinically validated. The AI name describes the intended research direction. Do not use this prototype to make clinical decisions or enter real patient data.
+**The app now includes a genuinely trained ML experiment:** a model learns associations from 6,000 invented, labelled assessments and estimates an invented severe-complication outcome within seven days. This is separate from the transparent priority rules. It does **not** predict survival, maternal death or a successful delivery, and it has no clinical validation. The public register has no confirmed outcomes. Do not use this prototype for clinical decisions or enter real patient data.
+
+Open [ML predictions](https://nahsc0.github.io/innomama-ai/#ml) or the [AI data assistant](https://nahsc0.github.io/innomama-ai/#assistant). The assistant uses a trained language-intent classifier with exact data calculations, not a general-purpose generative LLM.
 
 ## Research foundation
 
@@ -43,7 +45,7 @@ The intended workflow makes a missing signal visible, supports clinical review a
 
 Demo triggers: systolic BP ≥160 or <90; diastolic BP ≥110; pulse >120 or <50; respiratory rate >30 or <10; oxygen saturation <95%; reported bleeding, seizure or breathlessness yield Urgent. Temperature ≥38 or <36, intermediate elevated BP, headache/visual disturbance, prior complications, haemoglobin <11, fewer than eight ANC contacts at ≥36 weeks, incomplete routine functions or unconfirmed transport yield Review unless superseded. Missing required observations produce Incomplete unless urgent signs are present. These thresholds and routing are not a complete clinical protocol; local specialist review is required.
 
-No clinical effectiveness results exist. Twenty-five automated tests verify critical rule, pipeline, analytics and escalation behavior; browser testing verifies the interface and workflows. This demonstrates a usable product concept, not evidence that the app prevents mortality.
+No clinical effectiveness results exist. Forty-two automated tests verify rule, pipeline, analytics, escalation, ML learning/inference and grounded assistant behavior; browser testing verifies the interface and workflows. This demonstrates a usable product concept, not evidence that the app prevents mortality.
 
 ## Product features
 
@@ -142,7 +144,7 @@ Boundaries come from [geoBoundaries gbOpen / GRID3](https://www.geoboundaries.or
 
 ### Named algorithm for action
 
-**Signal Priority Rules v1.2.0** is a deterministic rule engine, combined with conjunctive (all-components-required) routine-care readiness. It is not a trained ML classifier and does not implement miniPIERS/fullPIERS or estimate an outcome probability. The exact current thresholds appear in the app's **Evidence & AI** view and in the trigger description above.
+**Signal Priority Rules v1.2.0** is a deterministic rule engine, combined with conjunctive (all-components-required) routine-care readiness. This rules layer is not a trained ML classifier and does not implement miniPIERS/fullPIERS or estimate an outcome probability. The separate v1.4 ML layer learns from synthetic labels, as documented below. The exact current thresholds appear in the app's **Evidence & AI** view and in the trigger description above.
 
 Order of precedence: (1) observed urgent physiological/symptom triggers → **Urgent**; (2) missing required observations → **Incomplete**; (3) maternal/context or readiness flags → **Review**; otherwise → **No triggers**. Urgent signs always override missingness. Missing medicine or staffing alone does not become a clinical emergency. The app preserves and displays the reasons for each priority. The newly added geographic fields, parity and proteinuria do not acquire invented predictive coefficients.
 
@@ -198,3 +200,105 @@ The interface now uses a 16px base size, at least 14px for secondary HTML text, 
 Analytics supports removable filter chips, full-row clickable care-gap bars (also Enter/Space), selected priority-legend feedback, and a readable map detail panel on hover or keyboard focus. State, facility, priority and indicator filters continue to intersect; clearing the state also clears its dependent facility. Matching counts are announced as a status update. Larger form controls, visible keyboard focus and responsive layouts improve touch and keyboard use. Tables scroll within their cards on narrow screens.
 
 Validation: all 25 existing tests passed, build succeeded, and browser checks covered state selection, chip removal, keyboard care-gap/map selection, persistent largest text setting after reload, and mobile layout at 390px plus desktop at 1440px. This UI update preserves Signal Priority Rules v1.2.0, the Google Sheet pipeline and simulated SMS behaviour.
+
+
+## Trained machine learning and AI data assistant (v1.4)
+
+### Problem, target and current result
+
+The original app surfaced gaps with rules but did not learn from outcomes. This update adds an actual supervised-learning training pipeline, learned model parameters, held-out evaluation and browser inference. Because the NHMIS-style Sheet contains observations without confirmed outcomes, it cannot support clinical model training. A separate, reproducible **6,000-assessment / 80-invented-facility cohort** supplies stochastic synthetic labels for the explicitly invented target **severe maternal complication within seven days of assessment**. It is not derived by labelling records with `assess()` and is not a mortality or delivery-success endpoint. The generator assigns events from an openly specified invented probability function plus facility variation and random draws, before introducing missing inputs. The assumptions are simulation choices, not clinical effect estimates. Training learns that simulator's associations.
+
+The 160-row connected register and the 6,000-row training cohort are separate datasets. No real mother or clinical outcome appears in either. The current feature set does not fully characterise an adjudicated severe complication, and no clinical endpoint definition or clinical accuracy claim follows from this simulation.
+
+### Model selection and evaluation
+
+Both candidates use the same training-only median imputation and feature scaling. Numeric inputs: age, gestation, ANC, systolic/diastolic BP, pulse, respiration, SpO₂, temperature and haemoglobin. Binary inputs: prior complications, reported symptoms, staffing and selected commodity/transport availability, including misoprostol. Explicit missingness flags and continuous engineered deviations add nonlinear information. Stock unknowns and unavailable items share a feature in this experiment. Parity, proteinuria, state, record IDs and rule priority are not predictors. Numeric missingness is imputed explicitly and reported at inference, rather than being presented as a normal observed value.
+
+| Candidate | Validation Brier score | Selection |
+| --- | ---: | --- |
+| L2 regularised logistic regression | 0.105155 | Selected |
+| Gradient-boosted regression trees with logistic loss, depth 2 | 0.106559 | Comparator |
+
+These are transparent JavaScript implementations, not calls to scikit-learn or a pretrained clinical score. Logistic regression learns an intercept and weights using batch gradient descent on binary log loss, with L2 penalty 0.01, learning rate 0.09 and 900 epochs. The comparator fits 100 depth-2 trees to logistic-loss residuals, learning rate 0.45, using candidate quantile splits and minimum 20 observations per leaf. The selected model is the lowest **validation Brier** candidate in this limited experiment, not a scientifically established best maternal-health model. No broad hyperparameter search or external validation occurred. The small validation difference does not establish clinical superiority.
+
+Facility-disjoint split: 48 training facilities (3,600 assessments), 16 validation facilities (1,200), 16 test facilities (1,200). The validation set also chooses the experimental classification threshold by maximum F1. The test set is excluded from fitting, candidate selection, preprocessing and threshold selection. It is not a temporal split or an external cohort.
+
+| Untouched synthetic test measure | Result |
+| --- | ---: |
+| Invented events / test observations | 164 / 1,200 |
+| ROC-AUC | 0.723391 |
+| Average precision | 0.313018 |
+| Brier score | 0.108233 |
+| Constant training-prevalence Brier | See `ml/model.json` |
+| Experimental threshold | 17.5% |
+| Sensitivity | 55.49% |
+| Specificity | 78.67% |
+| Precision | 29.17% |
+| True positives / false positives | 91 / 221 |
+| True negatives / false negatives | 815 / 73 |
+
+The model card includes log loss, calibration-bin counts/mean predictions/event rates, dataset hash, split counts, feature preprocessing, candidate validation metrics and learned weights. Average precision uses grouped score ties. The test confusion counts expose substantial missed synthetic events and false alerts. These metrics describe one simulated experiment, without confidence intervals, and cannot estimate clinical performance. Calibration bins with few records provide little information. No post-hoc calibration or subgroup clinical validation has occurred. Model selection, probability assessment and leakage considerations follow the principles described in [scikit-learn's calibration documentation](https://scikit-learn.org/stable/modules/calibration.html) and [data leakage guidance](https://github.com/scikit-learn/scikit-learn/blob/main/doc/common_pitfalls.rst). The code here is independently implemented.
+
+### Prediction workflow and safety-rule interaction
+
+```mermaid
+flowchart LR
+ A[Synthetic labelled cohort] --> B[Training facilities only: impute, scale, fit candidates]
+ B --> C[Validation facilities: select model and threshold]
+ C --> D[Untouched test evaluation and versioned model card]
+ D --> E[Explicit reviewed commit and deployment]
+ F[Accepted Sheet snapshot] --> G[Shared feature extraction and frozen model inference]
+ E --> G
+ G --> H[Experimental likelihood, missingness and learned contributions]
+ F --> I[Independent urgent safety rules and simulated response]
+```
+
+**ML predictions** shows the named model, comparison, test results, calibration bins, current-register estimates, complete filtered JSON export and a scenario explorer. The same Analytics filters apply to the register prediction table. Individual maternal records show a prediction card and the largest log-odds contributions relative to training means. These are associations, not explanations of causation. The scenario explorer changes copied observations only, recalculates the learned model and never writes to the register or changes safety-rule alerts. It cannot estimate the effect of administering a medicine.
+
+Inputs outside the numeric training min/max range suppress the estimate. More than three missing numeric inputs also suppress it. Otherwise training medians and missingness flags apply, and the UI states exactly which inputs were imputed. A missing model or facility returns an unavailable state. These are limited input guards, not a complete out-of-distribution detector. The invented training cohort starts at 20 weeks and does not cover every source record.
+
+An estimate below the experimental threshold never cancels an Urgent rule trigger. The model flag indicates a research review category, not an emergency or a validated care recommendation. Existing simulated SMS creation remains based on the independent urgent rules, not on the synthetic ML threshold. Actual clinical triage requires a clinician-approved and validated policy.
+
+### Learning, updates and reproducibility
+
+```sh
+npm run train:ml
+npm test
+npm run build
+```
+
+`ml/synthetic.js` generates the cohort with seed `20261103`. `ml/train.mjs` fits both candidates and exports `ml/model.json` plus `ml/training-preview.csv` (the full synthetic cohort, including predictors and labels). `ml/core.js` is shared by training and browser inference. The model version includes a hash of the data, fitted model and preprocessing. The cohort SHA-256 identifies the training data. `ml/train-intent.mjs` separately fits the assistant classifier from the curated example corpus in `ml/intent.js`.
+
+**Inference refresh is not retraining.** The existing five-minute ingestion schedule and one-minute browser polling continue. Accepted Sheet changes trigger inference with frozen parameters. They do not create outcome labels, change weights or promote a model. Outcome-free observations cannot teach a supervised model whether a prediction was correct. No prediction is fed back as a training label.
+
+An offline synthetic-outcome import is available:
+
+```sh
+node ml/train.mjs --data path/to/synthetic-labelled-cohort.json
+```
+
+The JSON must declare `synthetic: true`, `target: "synthetic_severe_complication_within_7_days"` and a `rows` array. Each row contains a unique `id`, facility `group`, `split` (`train`, `validation`, `test`), nested `p` predictors, nested `f` predictors with facility `id`, and observed **synthetic** label `y` (0 or 1). Use the object structure produced by `generateCohort()` as the contract. The importer rejects duplicate IDs, cross-split groups or facility IDs, invalid predictors/flags, insufficient events/non-events and non-synthetic inputs. This is an offline development tool, not a route for uploading real records. Importing arbitrary labels does not validate their meaning or follow-up quality.
+
+After any new cohort, inspect the model card, recalibration needs and input coverage, update documentation/expected-data tests, obtain the appropriate clinical/research review, and promote through an explicit versioned commit. Test metrics are for reporting, not repeated candidate tuning. Production learning needs governed longitudinal outcomes, adjudication, treatment timestamps, temporal/external validation, monitoring and a controlled promotion policy. See [WHO ethics and governance guidance](https://www.who.int/publications/i/item/9789240029200).
+
+### AI chatbot: local language understanding with grounded answers
+
+The **Data assistant** uses a genuinely trained **multinomial naive Bayes** intent classifier (eight intents, 64 curated training examples, Laplace smoothing) and a read-only query layer. It is a focused AI/NLU chatbot, **not a generative LLM or a ChatGPT integration**. It works on free GitHub Pages without a private backend, API key or external model download. The classifier identifies a topic; all numerical answers come from exact current-record aggregation, rule reasons or the frozen prediction model. It never lets a language model invent counts or call arbitrary tools.
+
+Supported topics: summary, counts, urgent cases, missing signals / commodity shortages / ANC gaps, routine-care readiness, model method/evaluation, exact case IDs and usage help. Example questions:
+
+- “How many mothers are urgent in Kano?”
+- “Which facilities lack misoprostol?”
+- “Explain IM-001.”
+- “Which model makes predictions?”
+- “And in Gombe?” (retains the preceding topic and scope)
+
+New questions start with current Analytics filters. Explicit state or facility IDs narrow the answer. Follow-up questions retain previous scope, while “all records” resets it. Several named states in one query receive a clarification instead of an invented comparison. Each answer exposes its scope, register mode, record count, source ingestion time/hash when available, rule/model versions and answer time. Exact case requests explicitly disclose their case scope. Large lists are limited with an explanation.
+
+Unknown questions, unavailable models/classifiers, empty cohorts and absent case IDs return explicit fallback answers. The assistant refuses dosing, diagnosis, survival advice, execution requests and requests to count observed outcomes that the register does not contain. These are bounded protections and topic restrictions, not a comprehensive clinical safety system. The intent classifier has a small authored corpus and can misclassify unfamiliar phrasing. A small smoke-test set is not a general natural-language accuracy benchmark. Users can inspect source counts in Analytics. Chat messages exist in memory for this tab (last 40 messages), reset when switching data mode or clearing the conversation, and are never persisted or transmitted to an AI provider. Earlier replies retain the source context from their answer time. No chat response changes data or sends SMS.
+
+A future general-purpose LLM would require a separately selected deployment approach and, for a hosted API, an authenticated private proxy with governed access and data minimisation. No secret may be embedded in this public static app.
+
+### Files, verification and presentation status
+
+New modules: `ml/core.js`, `ml/synthetic.js`, `ml/train.mjs`, `ml/intent.js`, `ml/train-intent.mjs`, versioned model artifacts, `ml-ui.js`, `assistant.js` and focused ML/assistant tests. The standard build publishes inference modules and public synthetic artifacts, not a clinical training service. There are now 42 automated tests, including learned-weight behaviour, nonlinear tree learning, metric ties, deterministic cohort hashes, facility leakage checks, preprocessing/inference consistency, missingness/range suppression, grounded counts and safe assistant fallbacks. Browser verification covered inference changes on copied observations, state-filtered export, chatbot state follow-ups and facility shortages, error-free console output, and 390px mobile layout with the largest text setting. The earlier team presentation describes v1.3; this README documents the v1.4 ML extension and supersedes its statements that no model has been trained.
