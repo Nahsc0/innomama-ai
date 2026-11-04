@@ -10,7 +10,21 @@ Maternal care depends on both a woman's condition and the facility's ability to 
 
 **The app now includes a genuinely trained ML experiment:** a model learns associations from 6,000 invented, labelled assessments and estimates an invented severe-complication outcome within seven days. This is separate from the transparent priority rules. It does **not** predict survival, maternal death or a successful delivery, and it has no clinical validation. The public register has no confirmed outcomes. Do not use this prototype for clinical decisions or enter real patient data.
 
-Open [ML predictions](https://nahsc0.github.io/innomama-ai/#ml) or the [AI data assistant](https://nahsc0.github.io/innomama-ai/#assistant). The assistant uses a trained language-intent classifier with exact data calculations, not a general-purpose generative LLM.
+Use the hamburger menu to open **Assistant**, or expand **Research & settings → Experimental ML** for the model workspace. The [direct ML link](https://nahsc0.github.io/innomama-ai/#ml) and [AI data assistant link](https://nahsc0.github.io/innomama-ai/#assistant) remain available. The assistant uses a trained language-intent classifier with exact data calculations, not a general-purpose generative LLM.
+
+## Simpler mobile interface (v1.5, 4 November 2026)
+
+The everyday workspace now emphasises the maternal queue, current signals and next actions. Longer explanations appear when requested, while the visible synthetic-data, no-clinical-use and simulated-SMS labels remain.
+
+- **Hamburger navigation:** the menu starts closed on mobile and desktop. Primary destinations are Home, Analytics, Mothers, Facilities, Response and Assistant. **Research & settings** starts collapsed and contains Experimental ML, Evidence, Activity & data and the saved Text size preference.
+- **Research on demand:** ML summary panels no longer precede Home or Analytics. A maternal record's **Research estimate** opens the experimental prediction card. The learned model, inference, scenario explorer, exports and `#ml` address remain available; the independent urgent rules continue to control simulated response priorities.
+- **Compact data controls:** a short status indicator shows connection freshness or errors. Expand **Data options** to select Connected register or Local sandbox, use **Refresh**, or inspect the last accepted sync. The direct Google Sheet link has been removed from the app interface.
+- **Short explanations:** repeated dashboard, response and assistant copy is shortened or placed inside expandable sections. Current urgency reasons, missing observations and response actions remain accessible in the care workflow. The long matching-assessment table starts collapsed. The assistant opens directly on the question field, with examples and filters available on demand.
+- **Animated quick tour:** the header and menu open a 12-second silent workflow video covering Review → Check → Coordinate. The approximately 93 KB MP4 has manual playback controls, an SVG poster, English WebVTT captions and the same three steps as readable text. It does not autoplay. The accompanying text reveal respects the browser's reduced-motion preference.
+
+**Data access is unchanged by hiding a link.** The synthetic workbook still has anyone-with-the-link Viewer sharing, and this README, pipeline configuration and snapshot provenance still identify its source. Published synthetic snapshots remain public. Removing the visible shortcut neither revokes sharing nor adds authentication or confidentiality. Source editing remains limited by Google Sheets permissions; real patient data requires the separate private architecture described below.
+
+The presentation layer is in `interface.js`; tour assets are `assets/quick-tour.mp4`, `assets/quick-tour-poster.svg` and `assets/quick-tour.vtt`. The static build includes the interface module and copies the assets directory. Package version is **1.5.0**. Local `output/` proposal artifacts are excluded from Git. Research methods and earlier release details remain documented below.
 
 ## Research foundation
 
@@ -89,7 +103,7 @@ flowchart LR
 - The server-side workflow runs on pushes, manual dispatch and a five-minute cron schedule (`2-57/5 * * * *`, UTC). It continues while no browser is open. GitHub may delay or skip scheduled runs; this is near-real-time polling, not a guaranteed five-minute service. See [GitHub schedule documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onschedule).
 - Each successful ingestion reads the two source tabs through Google's unauthenticated CSV query endpoint. The **synthetic-only workbook has anyone-with-the-link Viewer access** so the public demo needs no key or embedded credential. See [Google's spreadsheet data-source access guidance](https://developers.google.com/chart/interactive/docs/spreadsheets).
 - Every accepted batch records ingestion time, source URL, schema version and a SHA-256 source-content hash. Workflow runs and their deployment artifacts provide the run history. The initial snapshot is versioned in Git; recurring data updates are deployed artifacts, not an endless sequence of source commits. Google Drive maintains Sheet edit history.
-- The app checks the same-origin deployed snapshot every 60 seconds, and **Check feed** checks immediately. It cannot force GitHub ingestion; use Actions → workflow → Run workflow for an immediate source check. GitHub queue, Google caching and Pages deployment add latency.
+- The app checks the same-origin deployed snapshot every 60 seconds, and **Data options → Refresh** checks immediately. It cannot force GitHub ingestion; use Actions → workflow → Run workflow for an immediate source check. GitHub queue, Google caching and Pages deployment add latency.
 - **Connected register** is read-only in the app; change source data in Google Sheets. **Local sandbox** preserves the earlier editable demo, assessments and review tracking without writing back to Google or mixing local edits into the feed. Export reflects the selected view.
 
 ### Schema and quality controls
@@ -106,7 +120,7 @@ If ingestion fails, the previous deployment remains available. If the browser fe
 
 1. Open the source Sheet as its owner. In `Maternal_register`, change an invented observation, or in `Facilities`, change a stock boolean. Keep headers, identifiers and `synthetic=TRUE` intact.
 2. Wait for a scheduled run, or manually dispatch the workflow in [GitHub Actions](https://github.com/Nahsc0/innomama-ai/actions). A successful run ingests, validates, tests, builds and deploys the new snapshot.
-3. Open the app in Connected register mode. Use Check feed after deployment, or allow its next one-minute poll. The ingestion timestamp, relevant observations, readiness and alerts update together.
+3. Open the app in Connected register mode. Expand **Data options → Refresh** after deployment, or allow its next one-minute poll. The ingestion timestamp, relevant observations, readiness and alerts update together.
 4. For an invalid-data demonstration, use an out-of-range invented value and run ingestion. Confirm validation fails and the published app keeps its previous snapshot. Correct the Sheet before the next run.
 
 Local commands: `node pipeline/sync.mjs`, `npm test`, `npm run build`. The committed `pipeline/config.json` contains only public source identifiers, never credentials. Never place real clinical records in this public Sheet, repository or deployment. A real NHMIS integration requires an authorised authenticated server-side connector, approved schema mapping, patient privacy controls, provenance, encounter history and clinical validation.
@@ -121,6 +135,7 @@ The supplied InnoHealth reference informed the cobalt / midnight-blue / white pa
 | --- | --- | --- |
 | 1.0 | Original synthetic maternal surveillance demo | Core readiness and priority-rule tests; browser workflows |
 | 1.1 | InnoHealth branding, native Google Sheet, scheduled ingestion, schema validation, timestamp/hash provenance, automatic app refresh, explicit connected/sandbox modes | Pipeline parser/validation tests, source readback, live integration and browser checks |
+| 1.5 | Closed hamburger menu, Research & settings, shorter copy, compact data controls, source Sheet shortcut removed, optional animated workflow tour | 42 automated tests and static build passed; desktop/mobile browser interaction checks passed |
 
 ## Regional analytics and response centre (v1.2, 3 November 2026)
 
@@ -144,7 +159,7 @@ Boundaries come from [geoBoundaries gbOpen / GRID3](https://www.geoboundaries.or
 
 ### Named algorithm for action
 
-**Signal Priority Rules v1.2.0** is a deterministic rule engine, combined with conjunctive (all-components-required) routine-care readiness. This rules layer is not a trained ML classifier and does not implement miniPIERS/fullPIERS or estimate an outcome probability. The separate v1.4 ML layer learns from synthetic labels, as documented below. The exact current thresholds appear in the app's **Evidence & AI** view and in the trigger description above.
+**Signal Priority Rules v1.2.0** is a deterministic rule engine, combined with conjunctive (all-components-required) routine-care readiness. This rules layer is not a trained ML classifier and does not implement miniPIERS/fullPIERS or estimate an outcome probability. The separate v1.4 ML layer learns from synthetic labels, as documented below. The exact current thresholds appear under **Menu → Research & settings → Evidence** and in the trigger description above.
 
 Order of precedence: (1) observed urgent physiological/symptom triggers → **Urgent**; (2) missing required observations → **Incomplete**; (3) maternal/context or readiness flags → **Review**; otherwise → **No triggers**. Urgent signs always override missingness. Missing medicine or staffing alone does not become a clinical emergency. The app preserves and displays the reasons for each priority. The newly added geographic fields, parity and proteinuria do not acquire invented predictive coefficients.
 
@@ -195,7 +210,7 @@ Product concept: **InnoMama AI by InnoHealth Technologies**. Branding is provisi
 
 ## Readability and interaction update — UI v1.3.0
 
-The interface now uses a 16px base size, at least 14px for secondary HTML text, larger headings and 44px minimum primary control targets. The header's **Text size** selector offers Standard (16px), Larger (18px) and Largest (20px); the preference is saved on this browser and scales rem-based interface text across pages. SVG labels use chart coordinate units, with full state details available through focus/hover and the accessible state-count table.
+The interface uses a 16px base size, at least 14px for secondary HTML text, larger headings and 44px minimum primary control targets. The **Text size** selector offers Standard (16px), Larger (18px) and Largest (20px); since v1.5 it is inside **Menu → Research & settings**. The preference is saved on this browser and scales rem-based interface text across pages. SVG labels use chart coordinate units, with full state details available through focus/hover and the accessible state-count table.
 
 Analytics supports removable filter chips, full-row clickable care-gap bars (also Enter/Space), selected priority-legend feedback, and a readable map detail panel on hover or keyboard focus. State, facility, priority and indicator filters continue to intersect; clearing the state also clears its dependent facility. Matching counts are announced as a status update. Larger form controls, visible keyboard focus and responsive layouts improve touch and keyboard use. Tables scroll within their cards on narrow screens.
 
@@ -253,7 +268,7 @@ flowchart LR
  F --> I[Independent urgent safety rules and simulated response]
 ```
 
-**ML predictions** shows the named model, comparison, test results, calibration bins, current-register estimates, complete filtered JSON export and a scenario explorer. The same Analytics filters apply to the register prediction table. Individual maternal records show a prediction card and the largest log-odds contributions relative to training means. These are associations, not explanations of causation. The scenario explorer changes copied observations only, recalculates the learned model and never writes to the register or changes safety-rule alerts. It cannot estimate the effect of administering a medicine.
+**Menu → Research & settings → Experimental ML** opens the ML predictions workspace with the named model, comparison, test results, calibration bins, current-register estimates, complete filtered JSON export and a scenario explorer. The same Analytics filters apply to the register prediction table. Individual maternal records expose the prediction card through a closed **Research estimate** section, including the largest log-odds contributions relative to training means. These are associations, not explanations of causation. The scenario explorer changes copied observations only, recalculates the learned model and never writes to the register or changes safety-rule alerts. It cannot estimate the effect of administering a medicine.
 
 Inputs outside the numeric training min/max range suppress the estimate. More than three missing numeric inputs also suppress it. Otherwise training medians and missingness flags apply, and the UI states exactly which inputs were imputed. A missing model or facility returns an unavailable state. These are limited input guards, not a complete out-of-distribution detector. The invented training cohort starts at 20 weeks and does not cover every source record.
 

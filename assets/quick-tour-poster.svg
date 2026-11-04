@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+<title id="title">InnoMama AI quick tour</title><desc id="desc">Review the queue, check the signals, and coordinate a response. Synthetic demo. No clinical decisions. SMS is simulated.</desc>
+<rect width="960" height="540" fill="#fff"/><path d="M0 4H960" stroke="#00b980" stroke-width="8"/>
+<g font-family="Segoe UI,Arial,sans-serif"><text x="48" y="60" font-size="26" font-weight="700" fill="#10458e">InnoMama AI</text><text x="912" y="55" text-anchor="end" font-size="18" font-weight="600" fill="#57718b">INNOHEALTH TECHNOLOGIES</text>
+<text x="48" y="149" font-size="42" font-weight="700" fill="#07152a">See how it works</text><text x="48" y="193" font-size="26" fill="#57718b">A 12-second guide to your next action.</text>
+<g fill="#eff5fc"><rect x="48" y="239" width="272" height="168" rx="16"/><rect x="344" y="239" width="272" height="168" rx="16"/><rect x="640" y="239" width="272" height="168" rx="16"/></g>
+<g fill="#00b980" font-size="24" font-weight="700"><text x="72" y="278">01</text><text x="368" y="278">02</text><text x="664" y="278">03</text></g>
+<g fill="#07152a" font-size="26" font-weight="700"><text x="72" y="326">Review the</text><text x="72" y="361">queue</text><text x="368" y="326">Check the</text><text x="368" y="361">signals</text><text x="664" y="326">Coordinate</text><text x="664" y="361">a response</text></g>
+<path d="M48 460H912" stroke="#dce6f0"/><text x="48" y="506" font-size="22" fill="#57718b">Synthetic demo · No clinical decisions · SMS simulated</text></g></svg>
